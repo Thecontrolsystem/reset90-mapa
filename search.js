@@ -1,0 +1,6 @@
+(function(root){'use strict';
+const normalize=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l').replace(/[^a-z0-9@]+/g,' ').trim();
+const stop=new Set(['co','mam','jak','gdzie','sie','mi','moj','moja','moje','moge','do','po','na','w','z','i','a','to','jest','czy','kiedy','juz','nie']);
+function rank(entries,query){const q=normalize(query);if(!q)return[];const words=q.split(/\s+/).filter(w=>!stop.has(w));if(!words.length)return[];return entries.map(e=>{const title=normalize(e.title),aliases=normalize(e.aliases),body=normalize(e.body);let score=0;if(title.includes(q))score+=50;if(aliases.includes(q))score+=70;let matched=0;for(const w of words){const stem=w.length>5?w.slice(0,-2):w;const hit=s=>s.split(' ').some(t=>t===w||(stem.length>=4&&t.startsWith(stem)));if(hit(title)){score+=12;matched++}else if(hit(aliases)){score+=10;matched++}else if(hit(body)){score+=2;matched++}}if(matched/words.length<.6)return null;return {...e,score:score+matched/words.length*10}}).filter(Boolean).filter(e=>e.score>=12).sort((a,b)=>b.score-a.score).slice(0,8)}
+root.HubSearch={normalize,rank};if(typeof module!=='undefined')module.exports=root.HubSearch;
+})(typeof window!=='undefined'?window:globalThis);
